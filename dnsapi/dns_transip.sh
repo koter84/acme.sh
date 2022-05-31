@@ -1,7 +1,6 @@
 #!/usr/bin/env sh
 TRANSIP_Api_Url="https://api.transip.nl/v6"
 TRANSIP_Token_Read_Only="false"
-TRANSIP_Token_Global_Key="false"
 TRANSIP_Token_Expiration="30 minutes"
 # You can't reuse a label token, so we leave this empty normally
 TRANSIP_Token_Label=""
@@ -96,7 +95,10 @@ _transip_get_token() {
   nonce=$(echo "TRANSIP$(_time)" | _digest sha1 hex | cut -c 1-32)
   _debug nonce "$nonce"
 
-  data="{\"login\":\"${TRANSIP_Username}\",\"nonce\":\"${nonce}\",\"read_only\":\"${TRANSIP_Token_Read_Only}\",\"expiration_time\":\"${TRANSIP_Token_Expiration}\",\"label\":\"${TRANSIP_Token_Label}\",\"global_key\":\"${TRANSIP_Token_Global_Key}\"}"
+  # make IP whitelisting configurable
+  TRANSIP_Token_Global_Key="${TRANSIP_Token_Global_Key:-$(_readaccountconf_mutable TRANSIP_Token_Global_Key)}"
+
+  data="{\"login\":\"${TRANSIP_Username}\",\"nonce\":\"${nonce}\",\"read_only\":\"${TRANSIP_Token_Read_Only}\",\"expiration_time\":\"${TRANSIP_Token_Expiration}\",\"label\":\"${TRANSIP_Token_Label}\",\"global_key\":\"${TRANSIP_Token_Global_Key:-false}\"}"
   _debug data "$data"
 
   #_signature=$(printf "%s" "$data" | openssl dgst -sha512 -sign "$TRANSIP_Key_File" | _base64)
