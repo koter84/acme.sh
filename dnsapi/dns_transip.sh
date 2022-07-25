@@ -141,6 +141,20 @@ _transip_setup() {
   _saveaccountconf_mutable TRANSIP_Username "$TRANSIP_Username"
   _saveaccountconf_mutable TRANSIP_Key_File "$TRANSIP_Key_File"
 
+  # needed for automated testing, unless there is another possibility to create a keyfile that i don't know about
+  _debug "checking whether this is a test run"
+  if [ -n "$TEST_DNS" ]; then
+    _debug "yes, it is a test run"
+
+    _debug "checking whether the TRANSIP_Key_File is actually a base64 encoded private key"
+    if [ "$(echo "$TRANSIP_Key_File" | base64 -d | grep "BEGIN PRIVATE KEY")" != "" ]; then
+      _debug "yes, it is bas64 encoded"
+      temp_key_file=$(mktemp /tmp/transip.XXXXXXXXXX)
+      echo "$TRANSIP_Key_File" | base64 -d >"$temp_key_file"
+      TRANSIP_Key_File=$temp_key_file
+    fi
+  fi
+
   if [ -f "$TRANSIP_Key_File" ]; then
     if ! grep "BEGIN PRIVATE KEY" "$TRANSIP_Key_File" >/dev/null 2>&1; then
       _err "Key file doesn't seem to be a valid key: ${TRANSIP_Key_File}"
